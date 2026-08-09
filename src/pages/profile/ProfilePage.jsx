@@ -313,7 +313,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="profile-main-layout">
+        <div className={`profile-main-layout ${activeTab !== 'menu' ? 'profile-main-layout--subpage' : ''}`}>
           {!isSearchActive && (
             <div className="profile-sidebar">
               <div className="profile-user-card">

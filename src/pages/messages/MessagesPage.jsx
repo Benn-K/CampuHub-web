@@ -477,6 +477,13 @@ export default function MessagesPage() {
               {selectedChat ? (
                 <>
                   <div className="msg-chat-header">
+                    <button 
+                      className="msg-mobile-back" 
+                      onClick={() => handleSelectChat(null)}
+                      style={{ border: 'none', background: 'none', fontSize: '24px', marginRight: '12px', cursor: 'pointer', display: 'none' }}
+                    >
+                      ←
+                    </button>
                     <img src={selectedChat.avatar} alt={selectedChat.user} className="msg-chat-header-avatar" />
                     <div className="msg-chat-header-info">
                       <span className="msg-chat-header-name">{selectedChat.user}</span>

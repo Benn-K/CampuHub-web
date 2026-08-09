@@ -208,6 +208,40 @@ const features = [
 
 // ===== COMPONENTS =====
 
+function BottomNav({ currentHash }) {
+  const getNavClass = (path) => {
+    const isActive = path === '#profile'
+      ? currentHash.startsWith('#profile')
+      : currentHash === path;
+    return `bottom-nav__item ${isActive ? 'active' : ''}`;
+  };
+
+  return (
+    <nav className="bottom-nav">
+      <a href="#home" className={getNavClass('#home')}>
+        <HomeIcon />
+        <span>Home</span>
+      </a>
+      <a href="#search" className={getNavClass('#search')}>
+        <SearchIcon />
+        <span>Search</span>
+      </a>
+      <a href="#list" className={getNavClass('#list')}>
+        <PlusCircleIcon />
+        <span>Sell</span>
+      </a>
+      <a href="#messages" className={getNavClass('#messages')}>
+        <ChatIcon />
+        <span>Messages</span>
+      </a>
+      <a href="#profile" className={getNavClass('#profile')}>
+        <UsersIcon />
+        <span>Profile</span>
+      </a>
+    </nav>
+  );
+}
+
 function Header({ currentHash }) {
   const cartCount = useAppStore((s) => s.cart.length);
   const currentUser = useAppStore((s) => s.currentUser);
@@ -842,6 +876,7 @@ function App() {
         </div>
       </main>
       <Footer showComingSoon={showComingSoon} />
+      <BottomNav currentHash={currentHash} />
 
       {toastMsg && (
         <div style={{

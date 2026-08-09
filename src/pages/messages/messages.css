@@ -765,14 +765,28 @@
   .msg-split-layout {
     grid-template-columns: 1fr;
     border-radius: 16px;
+    height: calc(100vh - 160px);
   }
 
+  /* Default state: show sidebar, hide chat */
+  .msg-sidebar {
+    display: flex;
+  }
   .msg-chat-panel {
     display: none;
   }
 
+  /* Active state: hide sidebar, show chat */
   .msg-split-layout:has(.msg-convo-item.active) .msg-sidebar {
-    /* keep sidebar visible on mobile */
+    display: none;
+  }
+  .msg-split-layout:has(.msg-convo-item.active) .msg-chat-panel {
+    display: flex;
+  }
+
+  /* Show back button on mobile */
+  .msg-mobile-back {
+    display: flex !important;
   }
 
   .msg-page-title {
