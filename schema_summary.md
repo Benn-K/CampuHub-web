@@ -1,0 +1,2 @@
+# Supabase Backend Schema Summary
+
