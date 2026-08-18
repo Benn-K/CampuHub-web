@@ -209,6 +209,8 @@ const features = [
 // ===== COMPONENTS =====
 
 function BottomNav({ currentHash }) {
+  const unreadCount = useAppStore((s) => s.unreadCount);
+
   const getNavClass = (path) => {
     const isActive = path === '#profile'
       ? currentHash.startsWith('#profile')
@@ -232,9 +234,9 @@ function BottomNav({ currentHash }) {
       </a>
       <a href="#messages" className={getNavClass('#messages')} style={{ position: 'relative' }}>
         <ChatIcon />
-        {useAppStore((s) => s.unreadCount) > 0 && (
+        {unreadCount > 0 && (
           <span style={{ position: 'absolute', top: 4, right: 12, background: '#ef4444', color: 'white', borderRadius: '50%', width: 14, height: 14, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {useAppStore((s) => s.unreadCount)}
+            {unreadCount}
           </span>
         )}
         <span>Messages</span>
@@ -251,6 +253,7 @@ function Header({ currentHash }) {
   const cartCount = useAppStore((s) => s.cart.length);
   const currentUser = useAppStore((s) => s.currentUser);
   const wishlistCount = useAppStore((s) => s.wishlist.length);
+  const unreadCount = useAppStore((s) => s.unreadCount);
   
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -316,9 +319,9 @@ function Header({ currentHash }) {
           </a>
           <a href="#messages" className={getNavClass('#messages')} id="nav-messages" data-tooltip="Messages" style={{ position: 'relative' }}>
             <ChatIcon />
-            {useAppStore((s) => s.unreadCount) > 0 && (
+            {unreadCount > 0 && (
               <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', borderRadius: '50%', width: 16, height: 16, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {useAppStore((s) => s.unreadCount)}
+                {unreadCount}
               </span>
             )}
           </a>
