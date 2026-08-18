@@ -140,18 +140,28 @@ export default function OrdersSubPage() {
         .select(`
           id, status, amount, created_at, updated_at,
           buyer_id, seller_id,
-          products:product_id ( id, title, price, image_url, listing_type ),
-          seller:seller_id ( id, first_name, last_name, avatar_url )
+          products:product_id ( id, title, price, image_url, listing_type )
         `)
         .eq('buyer_id', currentUser.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      // Fetch seller profiles separately
+      const sellerIds = [...new Set((data || []).map(tx => tx.seller_id).filter(Boolean))];
+      let sellerMap = {};
+      if (sellerIds.length > 0) {
+        const { data: sellerData } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, avatar_url')
+          .in('id', sellerIds);
+        (sellerData || []).forEach(p => { sellerMap[p.id] = p; });
+      }
+
       const formatted = (data || [])
         .map(tx => {
           const product = tx.products || {};
-          const sellerProfile = tx.seller || {};
+          const sellerProfile = sellerMap[tx.seller_id] || {};
           const rawAction = (product.listing_type || 'buy').toUpperCase();
           let category = 'PURCHASE';
           if (rawAction === 'RENT') category = 'RENT';
@@ -187,6 +197,7 @@ export default function OrdersSubPage() {
       setIsLoading(false);
     }
   }, [currentUser?.id]);
+
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 

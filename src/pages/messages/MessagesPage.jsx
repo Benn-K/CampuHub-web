@@ -124,7 +124,7 @@ export default function MessagesPage() {
   const [liveChats, setLiveChats] = useState([]);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
 
-  // ─── Fetch chats from Supabase ─────────────────────
+  // ─── Fetch chats from Supabase ──────────────────
   const fetchChats = useCallback(async () => {
     if (!currentUser?.id) return;
     setIsLoadingChats(true);
@@ -132,12 +132,12 @@ export default function MessagesPage() {
       const { data, error } = await supabase
         .from('messages')
         .select(`
-          id, text_content, created_at, read, sender_id, receiver_id,
+          id, text_content, created_at, is_read, sender_id, receiver_id,
           sender:sender_id(id, first_name, last_name, avatar_url),
           receiver:receiver_id(id, first_name, last_name, avatar_url)
         `)
         .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-        .order('created_at', { ascending: true }); // Ascending so we can push to array or get last
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
 
@@ -150,7 +150,7 @@ export default function MessagesPage() {
         
         if (!threads[otherUserId]) {
           threads[otherUserId] = {
-            id: otherUserId, // Use otherUserId as the chat thread ID
+            id: otherUserId,
             user: `${otherUser?.first_name || ''} ${otherUser?.last_name || ''}`.trim() || 'Unknown User',
             avatar: otherUser?.avatar_url || `https://ui-avatars.com/api/?name=U&background=ccc&color=fff`,
             messages: [],
@@ -167,6 +167,7 @@ export default function MessagesPage() {
           fromMe: isMe
         });
         
+        // Mark thread as unread if message was received and not yet read
         if (!isMe && !msg.is_read) {
           threads[otherUserId].unread = true;
         }
@@ -176,6 +177,7 @@ export default function MessagesPage() {
 
       const mapped = Object.values(threads).sort((a, b) => b.lastMsgTimeRaw - a.lastMsgTimeRaw);
       setLiveChats(mapped);
+      // Only auto-select first chat if nothing is selected yet
       if (mapped.length > 0 && !selectedChatId) {
         setSelectedChatId(mapped[0].id);
       }
@@ -185,6 +187,9 @@ export default function MessagesPage() {
       setIsLoadingChats(false);
     }
   }, [currentUser?.id]);
+
+  // Always fetch on mount
+  useEffect(() => { fetchChats(); }, [fetchChats]);
 
   useEffect(() => {
     if (mainTab === 'Inbox') fetchChats();
@@ -213,33 +218,47 @@ export default function MessagesPage() {
     if (!currentUser?.id) return;
     setIsLoadingDeals(true);
     try {
-      const { data, error } = await supabase
+      // Fetch transactions
+      const { data: txData, error } = await supabase
         .from('transactions')
         .select(`
           id, status, amount, created_at,
           buyer_id, seller_id,
-          products:product_id ( id, title, price, image_url, listing_type ),
-          buyer:buyer_id ( id, first_name, last_name, avatar_url ),
-          seller:seller_id ( id, first_name, last_name, avatar_url )
+          products:product_id ( id, title, price, image_url, listing_type )
         `)
         .or(`buyer_id.eq.${currentUser.id},seller_id.eq.${currentUser.id}`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const mapped = (data || [])
+      // Collect all unique counterparty IDs to fetch profiles for
+      const counterpartyIds = [...new Set((txData || []).map(tx =>
+        tx.buyer_id === currentUser.id ? tx.seller_id : tx.buyer_id
+      ).filter(Boolean))];
+
+      // Fetch profiles for all counterparties in one query
+      let profileMap = {};
+      if (counterpartyIds.length > 0) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, avatar_url')
+          .in('id', counterpartyIds);
+        (profileData || []).forEach(p => { profileMap[p.id] = p; });
+      }
+
+      const mapped = (txData || [])
         .map(tx => {
           const isBuyer = tx.buyer_id === currentUser.id;
           const product = tx.products || {};
           const rawAction = (product.listing_type || 'buy').toUpperCase();
           const dealType = rawAction === 'RENT' ? 'RENT' : rawAction === 'TRADE' ? 'TRADE' : 'SELL';
           const { label, color } = statusDisplay(tx.status, isBuyer);
-          // Show the OTHER person's name (the counterparty)
-          const otherPerson = isBuyer ? tx.seller : tx.buyer;
-          const otherName = otherPerson
-            ? `${otherPerson.first_name || ''} ${otherPerson.last_name || ''}`.trim()
+          const counterpartyId = isBuyer ? tx.seller_id : tx.buyer_id;
+          const counterparty = profileMap[counterpartyId];
+          const otherName = counterparty
+            ? `${counterparty.first_name || ''} ${counterparty.last_name || ''}`.trim()
             : isBuyer ? 'Seller' : 'Buyer';
-          const otherAvatar = otherPerson?.avatar_url
+          const otherAvatar = counterparty?.avatar_url
             || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherName)}&background=${isBuyer ? '10B981' : '005DE3'}&color=fff`;
           return {
             id: tx.id,
@@ -265,6 +284,7 @@ export default function MessagesPage() {
       setIsLoadingDeals(false);
     }
   }, [currentUser?.id]);
+
 
   // Always fetch deals on mount so badge count and data are ready immediately
   useEffect(() => {
