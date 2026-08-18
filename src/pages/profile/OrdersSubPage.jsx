@@ -165,8 +165,8 @@ export default function OrdersSubPage() {
           const sellerProfile = sellerMap[tx.seller_id] || {};
           const rawAction = (product.listing_type || 'buy').toUpperCase();
           let category = 'PURCHASE';
-          if (rawAction === 'RENT') category = 'RENT';
-          if (rawAction === 'TRADE') category = 'TRADE';
+          if (rawAction.includes('RENT')) category = 'RENT';
+          if (rawAction.includes('TRADE')) category = 'TRADE';
 
           const rawStatus = (tx.status || 'pending').toLowerCase();
           let displayStatus = 'ONGOING';

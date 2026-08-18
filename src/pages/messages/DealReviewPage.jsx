@@ -204,7 +204,7 @@ export default function DealReviewPage() {
 
   const role = tx.buyer_id === currentUser?.id ? 'buyer' : 'seller';
   const actionType = (tx.products?.listing_type || 'buy').toUpperCase();
-  const type = actionType === 'RENT' ? 'RENT' : actionType === 'TRADE' ? 'TRADE' : 'SELL';
+  const type = actionType.includes('RENT') ? 'RENT' : actionType.includes('TRADE') ? 'TRADE' : 'SELL';
   const dealStatus = (tx.status || 'pending').toLowerCase();
   
   const escrowFee = dealStatus === 'pending_cod' ? 0 : ESCROW_FEE;

@@ -255,7 +255,7 @@ export default function MessagesPage() {
           const isBuyer = tx.buyer_id === currentUser.id;
           const product = tx.products || {};
           const rawAction = (product.listing_type || 'buy').toUpperCase();
-          const dealType = rawAction === 'RENT' ? 'RENT' : rawAction === 'TRADE' ? 'TRADE' : 'SELL';
+          const dealType = rawAction.includes('RENT') ? 'RENT' : rawAction.includes('TRADE') ? 'TRADE' : 'SELL';
           const { label, color } = statusDisplay(tx.status, isBuyer);
           const counterpartyId = isBuyer ? tx.seller_id : tx.buyer_id;
           const counterparty = profileMap[counterpartyId];
