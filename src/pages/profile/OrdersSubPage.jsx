@@ -138,9 +138,10 @@ export default function OrdersSubPage() {
       const { data, error } = await supabase
         .from('transactions')
         .select(`
-          id, status, amount, created_at,
+          id, status, amount, created_at, updated_at,
           buyer_id, seller_id,
-          products:product_id ( id, title, price, image_url, listing_type )
+          products:product_id ( id, title, price, image_url, listing_type ),
+          seller:seller_id ( id, first_name, last_name, avatar_url )
         `)
         .eq('buyer_id', currentUser.id)
         .order('created_at', { ascending: false });

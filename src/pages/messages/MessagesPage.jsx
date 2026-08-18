@@ -79,20 +79,31 @@ const statusDisplay = (status, isBuyer) => {
   const normStatus = (status || '').toLowerCase();
   switch (normStatus) {
     case 'completed': 
+    case 'payout_sent':
       return { label: 'Completed', color: '#3B82F6' }; // blue
     case 'accepted': 
-      return { label: 'Offer Accepted', color: '#10B981' }; // green
+      return { label: 'Accepted — Arrange Meetup', color: '#10B981' }; // green
     case 'locked_in_escrow':
+      return isBuyer 
+        ? { label: 'In Escrow — Waiting Seller', color: '#F59E0B' } // amber
+        : { label: 'Action Required', color: '#EF4444' }; // red
     case 'pending':
       return isBuyer 
-        ? { label: 'Waiting for Seller', color: '#F59E0B' } // amber
-        : { label: 'Action Required', color: '#EF4444' }; // red
+        ? { label: 'Pending Seller Approval', color: '#F59E0B' }
+        : { label: 'New Order — Action Required', color: '#EF4444' };
+    case 'pending_cod':
+      return { label: 'COD — Pay on Meetup', color: '#8B5CF6' };
     case 'cancelled':
     case 'declined':
-      return { label: 'Declined', color: '#6B7280' }; // gray
+      return { label: 'Declined / Cancelled', color: '#6B7280' }; // gray
     default: 
       return { label: status || 'Unknown', color: '#6B7280' };
   }
+};
+
+const isActiveDeal = (rawStatus) => {
+  const s = (rawStatus || '').toLowerCase();
+  return !['completed', 'payout_sent', 'cancelled', 'declined'].includes(s);
 };
 
 export default function MessagesPage() {
@@ -190,6 +201,7 @@ export default function MessagesPage() {
 
   // ─── Deals state ───────────────────────────────────
   const [dealFilter, setDealFilter] = useState('All');
+  const [dealStatusFilter, setDealStatusFilter] = useState('Active');
   const [dealSortOrder, setDealSortOrder] = useState('desc');
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState([]);
@@ -206,7 +218,9 @@ export default function MessagesPage() {
         .select(`
           id, status, amount, created_at,
           buyer_id, seller_id,
-          products:product_id ( id, title, price, image_url, listing_type )
+          products:product_id ( id, title, price, image_url, listing_type ),
+          buyer:buyer_id ( id, first_name, last_name, avatar_url ),
+          seller:seller_id ( id, first_name, last_name, avatar_url )
         `)
         .or(`buyer_id.eq.${currentUser.id},seller_id.eq.${currentUser.id}`)
         .order('created_at', { ascending: false });
@@ -220,19 +234,26 @@ export default function MessagesPage() {
           const rawAction = (product.listing_type || 'buy').toUpperCase();
           const dealType = rawAction === 'RENT' ? 'RENT' : rawAction === 'TRADE' ? 'TRADE' : 'SELL';
           const { label, color } = statusDisplay(tx.status, isBuyer);
+          // Show the OTHER person's name (the counterparty)
+          const otherPerson = isBuyer ? tx.seller : tx.buyer;
+          const otherName = otherPerson
+            ? `${otherPerson.first_name || ''} ${otherPerson.last_name || ''}`.trim()
+            : isBuyer ? 'Seller' : 'Buyer';
+          const otherAvatar = otherPerson?.avatar_url
+            || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherName)}&background=${isBuyer ? '10B981' : '005DE3'}&color=fff`;
           return {
             id: tx.id,
             dealType,
             role: isBuyer ? 'buyer' : 'seller',
-            user: isBuyer ? 'You (Buyer)' : 'You (Seller)',
-            avatar: `https://ui-avatars.com/api/?name=${isBuyer ? 'B' : 'S'}&background=${isBuyer ? '005DE3' : '10B981'}&color=fff`,
+            user: otherName,
+            avatar: otherAvatar,
             time: new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             itemTitle: product.title || 'Marketplace Item',
             itemPrice: product.price ? `GH₵ ${Number(product.price).toFixed(2)}` : 'N/A',
             itemImage: product.image_url || `https://picsum.photos/seed/${tx.id}/200`,
             dealStatus: label,
             statusColor: color,
-            lastMessage: tx.status === 'PENDING_COD' ? 'Pay on Meetup' : 'Escrow Payment',
+            lastMessage: isBuyer ? 'You purchased this item' : 'New order received',
             rawDate: new Date(tx.created_at).getTime(),
             rawStatus: tx.status,
           };
@@ -244,6 +265,11 @@ export default function MessagesPage() {
       setIsLoadingDeals(false);
     }
   }, [currentUser?.id]);
+
+  // Always fetch deals on mount so badge count and data are ready immediately
+  useEffect(() => {
+    fetchDeals();
+  }, [fetchDeals]);
 
   useEffect(() => {
     if (mainTab === 'Deals') fetchDeals();
@@ -260,7 +286,7 @@ export default function MessagesPage() {
 
   // Unread count
   const unreadCount = liveChats.filter(c => c.unread).length;
-  const pendingDeals = liveDeals.filter(d => d.rawStatus === 'pending' || d.rawStatus === 'locked_in_escrow').length;
+  const pendingDeals = liveDeals.filter(d => isActiveDeal(d.rawStatus)).length;
 
   // ─── Filter + sort: Inbox ──────────────────────────
   let activeChats = liveChats;
@@ -278,6 +304,9 @@ export default function MessagesPage() {
   // ─── Filter + sort: Deals ──────────────────────────
   const filteredDeals = liveDeals.filter(d => {
     if (dealFilter !== 'All' && d.dealType !== dealFilter) return false;
+    if (dealStatusFilter === 'Active' && !isActiveDeal(d.rawStatus)) return false;
+    if (dealStatusFilter === 'Completed' && d.rawStatus !== 'completed' && d.rawStatus !== 'payout_sent') return false;
+    if (dealStatusFilter === 'Cancelled' && d.rawStatus !== 'cancelled' && d.rawStatus !== 'declined') return false;
     if (searchQuery.trim()) {
       return d.itemTitle.toLowerCase().includes(searchQuery.toLowerCase());
     }
@@ -524,14 +553,28 @@ export default function MessagesPage() {
         {mainTab === 'Deals' && (
           <div className="msg-deals-layout">
             <div className="msg-deals-controls">
+              {/* Row 1: Type filter */}
               <div className="msg-filter-chips">
                 {[
-                  { key: 'All', label: 'All Deals' },
+                  { key: 'All', label: 'All Types' },
                   { key: 'SELL', label: 'Sales' },
                   { key: 'RENT', label: 'Rentals' },
                   { key: 'TRADE', label: 'Trades' },
                 ].map(f => (
                   <button key={f.key} className={`msg-chip ${dealFilter === f.key ? 'active' : ''}`} onClick={() => setDealFilter(f.key)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              {/* Row 2: Status filter */}
+              <div className="msg-filter-chips" style={{ marginTop: 8 }}>
+                {[
+                  { key: 'Active', label: '🟡 Active' },
+                  { key: 'Completed', label: '✅ Completed' },
+                  { key: 'Cancelled', label: '❌ Cancelled' },
+                  { key: 'All', label: 'All Status' },
+                ].map(f => (
+                  <button key={f.key} className={`msg-chip ${dealStatusFilter === f.key ? 'active' : ''}`} onClick={() => setDealStatusFilter(f.key)}>
                     {f.label}
                   </button>
                 ))}
@@ -566,7 +609,8 @@ export default function MessagesPage() {
             ) : sortedDeals.length === 0 ? (
               <div className="msg-empty">
                 <PackageIcon />
-                <p>No deals found</p>
+                <p>{dealStatusFilter === 'Active' ? 'No active deals' : 'No deals found'}</p>
+                {dealStatusFilter === 'Active' && <p style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>When you purchase, rent, or trade an item it will appear here</p>}
                 {!currentUser && <p style={{ fontSize: 13, color: '#9CA3AF' }}>Log in to see your deals</p>}
               </div>
             ) : (
