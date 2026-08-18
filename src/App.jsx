@@ -230,8 +230,13 @@ function BottomNav({ currentHash }) {
         <PlusCircleIcon />
         <span>Sell</span>
       </a>
-      <a href="#messages" className={getNavClass('#messages')}>
+      <a href="#messages" className={getNavClass('#messages')} style={{ position: 'relative' }}>
         <ChatIcon />
+        {useAppStore((s) => s.unreadCount) > 0 && (
+          <span style={{ position: 'absolute', top: 4, right: 12, background: '#ef4444', color: 'white', borderRadius: '50%', width: 14, height: 14, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {useAppStore((s) => s.unreadCount)}
+          </span>
+        )}
         <span>Messages</span>
       </a>
       <a href="#profile" className={getNavClass('#profile')}>
@@ -309,8 +314,13 @@ function Header({ currentHash }) {
               <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', borderRadius: '50%', width: 16, height: 16, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{wishlistCount}</span>
             )}
           </a>
-          <a href="#messages" className={getNavClass('#messages')} id="nav-messages" data-tooltip="Messages">
+          <a href="#messages" className={getNavClass('#messages')} id="nav-messages" data-tooltip="Messages" style={{ position: 'relative' }}>
             <ChatIcon />
+            {useAppStore((s) => s.unreadCount) > 0 && (
+              <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', borderRadius: '50%', width: 16, height: 16, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {useAppStore((s) => s.unreadCount)}
+              </span>
+            )}
           </a>
           <a href="#cart" className={getNavClass('#cart')} id="cart-btn" data-tooltip="Cart" style={{ position: 'relative' }}>
             <CartIcon />
@@ -698,6 +708,8 @@ function App() {
 
   const fetchProducts = useAppStore((s) => s.fetchProducts);
   const setCurrentUser = useAppStore((s) => s.setCurrentUser);
+  const setUnreadCount = useAppStore((s) => s.setUnreadCount);
+  const currentUser = useAppStore((s) => s.currentUser);
 
   const showComingSoon = (e) => {
     e.preventDefault();
@@ -782,6 +794,35 @@ function App() {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Monitor Unread Messages
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setUnreadCount(0);
+      return;
+    }
+    
+    const fetchUnreadCount = async () => {
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', currentUser.id)
+        .eq('is_read', false);
+      setUnreadCount(count || 0);
+    };
+
+    fetchUnreadCount();
+
+    const channel = supabase.channel(`unread_${currentUser.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${currentUser.id}` }, () => {
+        fetchUnreadCount();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.id, setUnreadCount]);
 
   const isCategories = currentHash === '#categories';
   const isMessages = currentHash === '#messages';
