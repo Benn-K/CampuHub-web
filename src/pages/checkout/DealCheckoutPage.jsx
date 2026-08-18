@@ -152,15 +152,19 @@ export default function DealCheckoutPage() {
 
   const insertNotification = async () => {
     if (!targetProduct?.seller_id) return;
-    await supabase.from('notifications').insert([{
-      user_id: targetProduct.seller_id,
-      type: action === 'trade' ? 'trade_offer' : 'new_order',
-      message: action === 'trade'
-        ? `${currentUser?.name || 'A buyer'} wants to trade for your "${targetProduct.title}"`
-        : `${currentUser?.name || 'A buyer'} just ${paymentMethod === 'cod' ? 'placed a COD order' : 'paid via Escrow'} for "${targetProduct.title}"`,
-      is_read: false,
-      created_at: new Date().toISOString(),
-    }]).catch(e => console.error('Notification insert error:', e));
+    try {
+      await supabase.from('notifications').insert([{
+        user_id: targetProduct.seller_id,
+        type: action === 'trade' ? 'trade_offer' : 'new_order',
+        message: action === 'trade'
+          ? `${currentUser?.name || 'A buyer'} wants to trade for your "${targetProduct.title}"`
+          : `${currentUser?.name || 'A buyer'} just ${paymentMethod === 'cod' ? 'placed a COD order' : 'paid via Escrow'} for "${targetProduct.title}"`,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      }]);
+    } catch (e) {
+      console.error('Notification insert error:', e);
+    }
   };
 
   const onSuccess = async (status) => {

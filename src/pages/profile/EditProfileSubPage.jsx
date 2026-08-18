@@ -130,7 +130,7 @@ export default function EditProfileSubPage() {
     });
 
     if (confirmed) {
-      await supabase.from('profiles').update({ is_deleted: true }).eq('id', currentUser?.id).catch(() => {});
+      try { await supabase.from('profiles').update({ is_deleted: true }).eq('id', currentUser?.id); } catch(e) {}
       showAlert({ title: 'Account Scheduled for Deletion', message: 'Your account will be permanently removed within 24 hours.', type: 'info' });
       await supabase.auth.signOut();
       logout();

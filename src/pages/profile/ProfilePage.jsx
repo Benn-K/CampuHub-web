@@ -246,7 +246,7 @@ export default function ProfilePage() {
     if (confirmed) {
       // Soft delete: set an is_deleted flag or schedule deletion. 
       // Assuming 'profiles' table can take an update if we have a flag, otherwise we'll just log out and show a message.
-      await supabase.from('profiles').update({ is_deleted: true }).eq('id', currentUser?.id).catch(() => {});
+      try { await supabase.from('profiles').update({ is_deleted: true }).eq('id', currentUser?.id); } catch(e) {}
       showAlert({ title: 'Account Scheduled for Deletion', message: 'Your account will be permanently deleted within 24 hours.', type: 'info' });
       await supabase.auth.signOut();
       logout();

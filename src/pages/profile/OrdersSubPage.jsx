@@ -239,11 +239,13 @@ export default function OrdersSubPage() {
     const { error } = await supabase.from('transactions').update({ status: 'cancelled' }).eq('id', order.id);
     if (error) { showAlert({ title: 'Error', message: error.message, type: 'error' }); return; }
     // Notify seller
-    await supabase.from('notifications').insert([{
-      user_id: order.sellerId, type: 'order_cancelled',
-      message: `The buyer cancelled their order for "${order.title}".`,
-      is_read: false, created_at: new Date().toISOString()
-    }]).catch(() => {});
+    try {
+      await supabase.from('notifications').insert([{
+        user_id: order.sellerId, type: 'order_cancelled',
+        message: `The buyer cancelled their order for "${order.title}".`,
+        is_read: false, created_at: new Date().toISOString()
+      }]);
+    } catch(e) {}
     fetchOrders();
     showAlert({ title: 'Order Cancelled', message: 'Your order has been cancelled.', type: 'info' });
   };
@@ -259,11 +261,13 @@ export default function OrdersSubPage() {
     const { error } = await supabase.from('transactions').update({ status: 'payout_sent' }).eq('id', order.id);
     if (error) { showAlert({ title: 'Error', message: error.message, type: 'error' }); return; }
     // Notify seller
-    await supabase.from('notifications').insert([{
-      user_id: order.sellerId, type: 'payout_sent',
-      message: `Buyer confirmed receipt of "${order.title}". Funds have been released to you!`,
-      is_read: false, created_at: new Date().toISOString()
-    }]).catch(() => {});
+    try {
+      await supabase.from('notifications').insert([{
+        user_id: order.sellerId, type: 'payout_sent',
+        message: `Buyer confirmed receipt of "${order.title}". Funds have been released to you!`,
+        is_read: false, created_at: new Date().toISOString()
+      }]);
+    } catch(e) {}
     fetchOrders();
     const leaveReview = await showConfirm({
       title: '🎉 Funds Released!',

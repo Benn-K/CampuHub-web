@@ -109,7 +109,7 @@ export default function ChatPage() {
         if (payload.new.sender_id === otherUserId) {
           setMessages(prev => [...prev, payload.new]);
           // Mark read
-          supabase.from('messages').update({ is_read: true }).eq('id', payload.new.id).catch(console.error);
+          supabase.from('messages').update({ is_read: true }).eq('id', payload.new.id).then(({error}) => { if(error) console.error(error); });
         }
       })
       .on('postgres_changes', {
@@ -209,7 +209,7 @@ export default function ChatPage() {
         reported_user_id: otherUserId,
         reason: 'Inappropriate chat behavior',
         created_at: new Date().toISOString()
-      }]).catch(() => {});
+      }]).then(({error}) => { if(error) console.error(error); });
       showAlert({ title: 'Report Sent', message: 'User has been reported. Thank you for keeping CampuHub safe.', type: 'success' });
     }
   };

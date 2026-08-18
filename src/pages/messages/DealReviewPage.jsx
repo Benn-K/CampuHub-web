@@ -101,9 +101,13 @@ export default function DealReviewPage() {
   }, [dealId]);
 
   const notifyUser = async (userId, type, message) => {
-    await supabase.from('notifications').insert([{
-      user_id: userId, type, message, is_read: false, created_at: new Date().toISOString()
-    }]).catch(e => console.error('Notify error:', e));
+    try {
+      await supabase.from('notifications').insert([{
+        user_id: userId, type, message, is_read: false, created_at: new Date().toISOString()
+      }]);
+    } catch (e) {
+      console.error('Notify error:', e);
+    }
   };
 
   // ─── Seller: Accept Deal ────────────────────────────

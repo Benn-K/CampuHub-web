@@ -355,7 +355,7 @@ export default function MessagesPage() {
         .eq('sender_id', chatId)
         .eq('receiver_id', currentUser.id)
         .eq('is_read', false)
-        .catch(console.error);
+        .then(({error}) => { if (error) console.error(error); });
     }
   };
 
@@ -413,7 +413,7 @@ export default function MessagesPage() {
       const deal = liveDeals.find(d => d.id === dealId);
       if (!deal) return Promise.resolve();
       const col = deal.role === 'buyer' ? 'buyer_hidden' : 'seller_hidden';
-      return supabase.from('transactions').update({ [col]: true }).eq('id', dealId).catch(e => console.error('Hide deal error:', e));
+      return supabase.from('transactions').update({ [col]: true }).eq('id', dealId).then(({error}) => { if (error) console.error('Hide deal error:', error); });
     });
     await Promise.all(updates);
 
