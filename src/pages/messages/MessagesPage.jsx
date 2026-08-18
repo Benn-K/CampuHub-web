@@ -223,7 +223,7 @@ export default function MessagesPage() {
         .from('transactions')
         .select(`
           id, status, amount, created_at,
-          buyer_id, seller_id,
+          buyer_id, seller_id, buyer_hidden, seller_hidden,
           products:product_id ( id, title, price, image_url, listing_type )
         `)
         .or(`buyer_id.eq.${currentUser.id},seller_id.eq.${currentUser.id}`)
@@ -247,6 +247,10 @@ export default function MessagesPage() {
       }
 
       const mapped = (txData || [])
+        .filter(tx => {
+          const isBuyer = tx.buyer_id === currentUser.id;
+          return isBuyer ? !tx.buyer_hidden : !tx.seller_hidden;
+        })
         .map(tx => {
           const isBuyer = tx.buyer_id === currentUser.id;
           const product = tx.products || {};

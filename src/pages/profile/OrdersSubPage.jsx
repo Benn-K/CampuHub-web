@@ -139,7 +139,7 @@ export default function OrdersSubPage() {
         .from('transactions')
         .select(`
           id, status, amount, created_at, updated_at,
-          buyer_id, seller_id,
+          buyer_id, seller_id, buyer_hidden,
           products:product_id ( id, title, price, image_url, listing_type )
         `)
         .eq('buyer_id', currentUser.id)
@@ -159,6 +159,7 @@ export default function OrdersSubPage() {
       }
 
       const formatted = (data || [])
+        .filter(tx => !tx.buyer_hidden)
         .map(tx => {
           const product = tx.products || {};
           const sellerProfile = sellerMap[tx.seller_id] || {};
