@@ -106,13 +106,18 @@ export default function CartPage() {
         seller_id: item.sellerId,
         product_id: item.id,
         status: status,
-        amount: item.price,
+        amount: parseFloat((item.price * (item.quantity || 1)).toFixed(2)),
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        buyer_hidden: false,
+        seller_hidden: false,
       }));
 
       const { error } = await supabase.from('transactions').insert(transactionsToInsert);
       
       if (error) {
+        console.error('Transaction insert error:', error);
+        showAlert({ title: 'Transaction Failed', message: error.message, type: 'error' });
         throw error;
       }
 

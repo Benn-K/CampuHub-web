@@ -109,7 +109,7 @@ export default function ChatPage() {
         if (payload.new.sender_id === otherUserId) {
           setMessages(prev => [...prev, payload.new]);
           // Mark read
-          supabase.from('messages').update({ read: true }).eq('id', payload.new.id).catch(console.error);
+          supabase.from('messages').update({ is_read: true }).eq('id', payload.new.id).catch(console.error);
         }
       })
       .on('postgres_changes', {

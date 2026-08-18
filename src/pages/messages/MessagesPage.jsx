@@ -347,6 +347,16 @@ export default function MessagesPage() {
     if (isChatSelectMode) { toggleChatSelection(chatId); return; }
     setSelectedChatId(chatId);
     setLiveChats(prev => prev.map(c => c.id === chatId ? { ...c, unread: false } : c));
+    
+    // Mark messages as read in backend
+    if (currentUser?.id && chatId) {
+      supabase.from('messages')
+        .update({ is_read: true })
+        .eq('sender_id', chatId)
+        .eq('receiver_id', currentUser.id)
+        .eq('is_read', false)
+        .catch(console.error);
+    }
   };
 
   const handleSendReply = async () => {

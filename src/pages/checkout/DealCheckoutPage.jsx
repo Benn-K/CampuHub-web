@@ -138,8 +138,15 @@ export default function DealCheckoutPage() {
       status: status,
       amount: parseFloat(itemSubtotal.toFixed(2)),
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      buyer_hidden: false,
+      seller_hidden: false,
     }]);
-    if (error) console.error('Transaction insert error:', error);
+    if (error) {
+      console.error('Transaction insert error:', error);
+      showAlert({ title: 'Transaction Failed', message: error.message, type: 'error' });
+      throw error;
+    }
     return !error;
   };
 
