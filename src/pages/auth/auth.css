@@ -197,13 +197,7 @@
 }
 
 .auth-card--scrollable {
-  max-height: calc(100vh - 80px);
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.auth-card--scrollable::-webkit-scrollbar {
-  display: none;
+  /* Removed max-height and overflow-y to allow natural scrolling of the right panel */
 }
 
 /* ===== CARD HEADER ===== */

@@ -135,6 +135,11 @@
   grid-template-columns: 1fr;
 }
 
+.modal-actions--auth {
+  display: flex;
+  flex-direction: column;
+}
+
 .modal-btn {
   height: 46px;
   border: none;

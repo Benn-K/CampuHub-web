@@ -84,7 +84,7 @@ function Modal({ config, onClose }) {
           {message && <p className="modal-message">{message}</p>}
         </div>
 
-        <div className={`modal-actions ${isAlert ? 'modal-actions--single' : ''}`}>
+        <div className={`modal-actions ${isAlert ? 'modal-actions--single' : ''} ${type === 'auth' ? 'modal-actions--auth' : ''}`}>
           {type === 'auth' ? (
             <>
               <button className="modal-btn modal-btn--cancel" onClick={onClose}>

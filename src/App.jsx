@@ -271,7 +271,7 @@ function Header({ currentHash }) {
 
   const userInitials = currentUser
     ? `${currentUser.first_name?.[0] || ''}${currentUser.last_name?.[0] || ''}`.toUpperCase()
-    : 'BK';
+    : <UsersIcon size={20} color="currentColor" />;
 
   return (
     <header className="header" id="header">
