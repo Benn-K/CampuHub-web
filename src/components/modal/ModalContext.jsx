@@ -87,9 +87,6 @@ function Modal({ config, onClose }) {
         <div className={`modal-actions ${isAlert ? 'modal-actions--single' : ''} ${type === 'auth' ? 'modal-actions--auth' : ''}`}>
           {type === 'auth' ? (
             <>
-              <button className="modal-btn modal-btn--cancel" onClick={onClose}>
-                Cancel
-              </button>
               <button className="modal-btn modal-btn--secondary" onClick={() => { window.location.hash = '#auth/login'; onClose(); }} style={{ background: '#f1f5f9', color: '#0f172a' }}>
                 Log In
               </button>
